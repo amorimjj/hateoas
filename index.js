@@ -28,7 +28,6 @@ function hateoas(options) {
         if (!collectionLinkHandlers[type]) {
             collectionLinkHandlers[type] = [];
         }
-
         collectionLinkHandlers[type].push(handler);
     }
 
@@ -42,8 +41,10 @@ function hateoas(options) {
 
     function getLinksGeneric(handlers, type, data) {
         if (handlers[type]) {
+			var args = Array.prototype.slice.call(arguments, 2);
             var links = handlers[type].reduce(function(links, handler) {
-                return extend({}, links, handler(data, type, links));
+				var a = args.concat([type, links]);
+                return extend({}, links, handler.apply(this, a));
             }, {});
 
             return Object.keys(links).reduce(function(prefixedLinks, linkName) {
@@ -62,32 +63,19 @@ function hateoas(options) {
         var result = {
             data: collection.map(link.bind(null, type))
         };
-
-        var links = getCollectionLinks(type, collection);
-
-        if (options.propName) {
-            result[options.propName] = links;
-        } else {
-            extend(result, links);
-        }
-
+        var args = Array.prototype.slice.call(arguments);
+		result[options.propName] = getCollectionLinks.apply(this, args);
         return result;
     }
 
     function link(type, data) {
         if (Array.isArray(data)) {
-            return linkCollection(type, data);
+			var args = Array.prototype.slice.call(arguments);
+            return linkCollection.apply(this, args);
         }
 
         if (linkHandlers[type]) {
-            var links = getLinks(type, data);
-
-            if (options.propName) {
-                data[options.propName] = links;
-            } else {
-                extend(data, links);
-            }
-
+            data[options.propName] = getLinks(type, data);
             return data;
         } else {
             return data;
